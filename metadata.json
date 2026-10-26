@@ -1,0 +1,6 @@
+{
+  "name": "The Scam Triangle Triage System",
+  "description": "A brutalist cyber-forensic triage platform and AI-powered scam detector to neutralize online fraud, analyze suspicious messages, and guide victims calmly.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

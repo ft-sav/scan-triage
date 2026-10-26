@@ -1,0 +1,248 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark-mode, .dark *, .dark-mode *));
+
+:root {
+  --hot-pink: #FF3EA5;
+  --electric-cyan: #00E5FF;
+  --acid-lime: #B6FF00;
+  --sunny-yellow: #FFE600;
+  --grape-purple: #7B2FFF;
+  --ink: #1A1033;
+  --paper: #FFF8E7;
+  --lavender-bg: #E9DDFF;
+  --checker-tint: #dfd0fc;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--lavender-bg);
+  background-image: 
+    linear-gradient(45deg, var(--checker-tint) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--checker-tint) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--checker-tint) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--checker-tint) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  color: var(--ink);
+  font-family: 'Space Mono', monospace;
+  font-size: 16px;
+  line-height: 1.5;
+  image-rendering: pixelated;
+  shape-rendering: crispEdges;
+  -webkit-font-smoothing: none;
+  transition: background-color 0.15s ease;
+}
+
+/* Dark Mode Theme */
+:where(html.dark, body.dark-mode) {
+  --ink: #FFFFFF;
+  --paper: #1B1232;
+  --lavender-bg: #0C061A;
+  --checker-tint: #170E30;
+  color: #F8F5FF;
+}
+
+:where(html.dark, body.dark-mode) body {
+  background-color: #0C061A;
+  color: #F8F5FF;
+}
+
+:where(html.dark, body.dark-mode) :where(.pixel-box, .pixel-box-lg) {
+  background-color: #1B1232;
+}
+
+:where(html.dark, body.dark-mode) .pixel-box {
+  border-color: #00E5FF;
+  box-shadow: 4px 4px 0px #00E5FF;
+}
+
+:where(html.dark, body.dark-mode) .pixel-box-lg {
+  border-color: #00E5FF;
+  box-shadow: 6px 6px 0px #00E5FF;
+}
+
+:where(html.dark, body.dark-mode) .cartridge-btn {
+  background-color: #241A42;
+  border-color: #00E5FF;
+  box-shadow: 4px 4px 0px #00E5FF;
+  color: #FFFFFF;
+}
+
+body.dark-mode .cartridge-btn:hover {
+  box-shadow: 4px 6px 0px #FF3EA5;
+}
+
+body.dark-mode .pixel-btn {
+  border-color: #00E5FF;
+  box-shadow: 3px 3px 0px #00E5FF;
+}
+
+body.dark-mode .window-titlebar {
+  border-bottom: 3px solid #00E5FF;
+}
+
+body.dark-mode .window-btn {
+  border-color: #00E5FF;
+  background-color: #1B1232;
+  color: #00E5FF;
+}
+
+body.dark-mode textarea {
+  background-color: #100824 !important;
+  color: #FFFFFF !important;
+  border-color: #00E5FF !important;
+}
+
+/* Retro Fonts */
+.font-pixel {
+  font-family: 'Press Start 2P', cursive, monospace;
+}
+
+.font-vt {
+  font-family: 'VT323', monospace;
+  letter-spacing: 0.05em;
+}
+
+.font-mono-body {
+  font-family: 'Space Mono', monospace;
+}
+
+/* Chunky Pixel Window & Shadow Utilities */
+:where(.pixel-box, .pixel-box-lg) {
+  background-color: var(--paper);
+}
+
+.pixel-box {
+  border: 3px solid var(--ink);
+  box-shadow: 4px 4px 0px var(--ink);
+}
+
+.pixel-box-lg {
+  border: 4px solid var(--ink);
+  box-shadow: 6px 6px 0px var(--ink);
+}
+
+.pixel-shadow-sm {
+  box-shadow: 3px 3px 0px var(--ink);
+}
+
+.pixel-shadow {
+  box-shadow: 4px 4px 0px var(--ink);
+}
+
+.pixel-shadow-lg {
+  box-shadow: 6px 6px 0px var(--ink);
+}
+
+/* Pixel Button Bevel & Click Press */
+.pixel-btn {
+  border: 3px solid var(--ink);
+  box-shadow: 3px 3px 0px var(--ink);
+  transition: transform 0.05s ease, box-shadow 0.05s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.pixel-btn:hover {
+  filter: brightness(1.05);
+}
+
+.pixel-btn:active {
+  transform: translate(3px, 3px);
+  box-shadow: 0px 0px 0px var(--ink);
+}
+
+.pixel-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: 3px 3px 0px var(--ink) !important;
+}
+
+/* Pixel Cartridge Button */
+.cartridge-btn {
+  border: 3px solid var(--ink);
+  box-shadow: 4px 4px 0px var(--ink);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+  position: relative;
+}
+
+.cartridge-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 4px 6px 0px var(--ink);
+}
+
+.cartridge-btn:active {
+  transform: translate(3px, 3px);
+  box-shadow: 1px 1px 0px var(--ink);
+}
+
+/* Window Titlebar */
+.window-titlebar {
+  border-bottom: 3px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  user-select: none;
+}
+
+.window-btn {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--ink);
+  background-color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  line-height: 1;
+  font-weight: bold;
+}
+
+/* Pixel Meter 10-Block Bar */
+.pixel-meter-block {
+  height: 22px;
+  border: 2px solid var(--ink);
+  margin-right: 3px;
+  flex: 1;
+}
+
+/* Marquee Ticker */
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: 200%;
+  animation: ticker 25s linear infinite;
+}
+
+/* Twinkling Pixel Star */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+.pixel-star {
+  animation: twinkle 3s ease-in-out infinite;
+}
+
+/* Focus Rings */
+:focus-visible {
+  outline: 3px solid var(--electric-cyan) !important;
+  outline-offset: 2px;
+}
+
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "_note": "Verify every resource before launch.",
+  "global_emergency": {
+    "helpline_number": "1930",
+    "helpline_name": "National Cyber Crime Helpline (MHA / I4C)",
+    "helpline_desc": "Call immediately (within 2 hours/golden hour) if any money was transferred or debited.",
+    "portal_url": "https://cybercrime.gov.in",
+    "portal_name": "National Cybercrime Reporting Portal (cybercrime.gov.in)",
+    "chakshu_url": "https://sancharsaathi.gov.in/sfc/",
+    "chakshu_name": "DoT Sanchar Saathi (Chakshu)",
+    "chakshu_desc": "Report suspected fraudulent communication (calls, SMS, WhatsApp) directly to Telecom Ministry.",
+    "bank_action": "Call your bank using the number on the back of your card or in the official app, ask to block the card/UPI and flag the transaction."
+  },
+  "scam_specific": {
+    "DIGITAL_ARREST_IMPERSONATION": {
+      "headline": "No agency conducts 'digital arrest' or asks for money transfers over video calls.",
+      "advice": "No police, CBI, Customs, ED, or court questions citizens over Skype/WhatsApp video call, or asks to move money to verify yourself. Hang up immediately. There is zero legal validity to 'digital arrest'.",
+      "helpline": "1930",
+      "report_portal": "https://cybercrime.gov.in"
+    },
+    "UPI_COLLECT_OR_REFUND": {
+      "headline": "Entering a UPI PIN always DEDUCTS money from your account; it never receives money.",
+      "advice": "If someone sent money 'by mistake', tell them to file a reversal through their own bank or UPI app. Never approve collect requests or enter UPI PIN to receive money.",
+      "helpline": "1930",
+      "bank_contact": "Block UPI ID instantly in your banking app (GPay / PhonePe / Paytm / BHIM)."
+    },
+    "FAKE_JOB_OR_INTERNSHIP": {
+      "headline": "Genuine employers and AICTE-listed internships do not charge fees.",
+      "advice": "Legitimate companies never ask candidates for security deposits, laptop fees, police clearance charges, or registration fees via personal UPI IDs or free email domains.",
+      "report_portal": "https://cybercrime.gov.in",
+      "official_internships": "https://internship.aicte-india.org"
+    },
+    "KYC_OR_BANK_PHISHING": {
+      "headline": "Banks never send SMS with shortened links threatening same-day account freeze.",
+      "advice": "RBI guidelines explicitly forbid banks from asking for card numbers, PINs, OTPs, or CVV through SMS links. Visit your physical branch or open your bank's verified official app directly.",
+      "helpline": "1930",
+      "bank_action": "Call official bank helpline from the physical card to freeze NetBanking."
+    },
+    "PARCEL_OR_CUSTOMS": {
+      "headline": "Customs department never calls victims directly demanding cash settlements via UPI.",
+      "advice": "Indian Customs and courier services (FedEx, DHL, India Post) communicate officially by registered post and never demand online transfers to personal accounts to clear narcotics or detained items.",
+      "helpline": "1930"
+    },
+    "INVESTMENT_OR_TRADING": {
+      "headline": "Guaranteed 100%+ returns and WhatsApp/Telegram stock tips are unregistered boiler-room scams.",
+      "advice": "Verify all financial advisors on SEBI (sebi.gov.in). Never send money to private individual accounts for stock market or crypto trading.",
+      "report_portal": "https://scores.sebi.gov.in"
+    },
+    "LOTTERY_OR_PRIZE": {
+      "headline": "You cannot win a contest or lottery you never bought a ticket for.",
+      "advice": "KBC, Kaun Banega Crorepati, automobile, or lucky-draw wins demanding 'GST clearance' or 'processing charge' are 100% advance-fee fraud.",
+      "helpline": "1930"
+    },
+    "TECH_SUPPORT_REMOTE_ACCESS": {
+      "headline": "Never install AnyDesk, TeamViewer, or QuickSupport on instructions from an incoming caller.",
+      "advice": "Remote access apps grant full visual control of your screen and OTPs to scammers. Turn off Wi-Fi/Mobile Data immediately and uninstall the app.",
+      "helpline": "1930"
+    },
+    "SEXTORTION_BLACKMAIL": {
+      "headline": "Do not pay. Scammers demand more after every transfer. Disconnect and report.",
+      "advice": "Video calls recorded with morphed nudity are extortion rackets. Block the scammer, preserve screenshots, do not transfer any money, and report to 1930 and cybercrime.gov.in immediately.",
+      "helpline": "1930"
+    },
+    "LOAN_APP_HARASSMENT": {
+      "headline": "Illegal instant loan apps access contacts to blackmail. Lodge police and cyber complaints.",
+      "advice": "Report unauthorized lending apps to RBI Sachet (sachet.rbi.org.in) and National Cyber Crime portal.",
+      "report_portal": "https://sachet.rbi.org.in"
+    },
+    "OTHER": {
+      "headline": "Stay calm. Scammers rely on artificial urgency and fear to block logical thinking.",
+      "advice": "Discuss the situation with a family member or friend before taking any financial action. Call 1930 if in doubt.",
+      "helpline": "1930"
+    },
+    "NONE": {
+      "headline": "No red flags found in this text, but always remain vigilant.",
+      "advice": "Legitimate banking alerts will remind you never to share OTPs or passwords. Always verify sender identity directly through official channels.",
+      "helpline": "1930"
+    }
+  }
+}
