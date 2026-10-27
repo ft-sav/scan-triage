@@ -25,14 +25,29 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 app.use(express.json({ limit: '10mb' }));
 
-// Model specification: fast Flash-class Gemini model in ONE constant
-const GEMINI_MODEL = 'gemini-3.1-flash-lite';
+// Model specification: Tiered fallback chain ensuring high availability
+export const MODEL_CANDIDATES = [
+  'gemini-3.8-flash',
+  'gemini-3.1-flash-lite',
+  'gemini-flash-latest',
+];
 
-// Shared Gemini AI instance on server (Server-side ONLY)
-let aiClient: GoogleGenAI | null = null;
-if (process.env.GEMINI_API_KEY) {
-  aiClient = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY,
+// Comprehensive API Key Resolution across standard environment variable names
+export function getGeminiApiKey(): string | undefined {
+  return (
+    process.env.GEMINI_API_KEY ||
+    process.env.API_KEY ||
+    process.env.GOOGLE_API_KEY ||
+    process.env.VITE_GEMINI_API_KEY
+  );
+}
+
+// On-demand client creator to ensure dynamic environment variables are captured in serverless lambdas
+export function getAiClient(): GoogleGenAI | null {
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) return null;
+  return new GoogleGenAI({
+    apiKey,
     httpOptions: {
       headers: {
         'User-Agent': 'aistudio-build',
@@ -41,37 +56,41 @@ if (process.env.GEMINI_API_KEY) {
   });
 }
 
-// Fallback helper in case primary GEMINI_MODEL encounters temporary 503 high demand
+// Resilient helper with multi-tier model candidate failover and automatic retry
 async function generateContentWithFallback(params: {
   contents: any;
   config?: any;
 }): Promise<any> {
-  if (!aiClient) return null;
-  try {
-    return await aiClient.models.generateContent({
-      model: GEMINI_MODEL,
-      contents: params.contents,
-      config: params.config,
-    });
-  } catch (err: any) {
-    const errMsg = String(err?.message || '');
-    if (
-      errMsg.includes('503') ||
-      errMsg.includes('high demand') ||
-      errMsg.includes('UNAVAILABLE') ||
-      errMsg.includes('overloaded')
-    ) {
-      console.warn(
-        `[GEMINI] ${GEMINI_MODEL} 503 spike, seamlessly falling back to gemini-3.1-flash-lite`
-      );
-      return await aiClient.models.generateContent({
-        model: 'gemini-3.1-flash-lite',
+  const client = getAiClient();
+  if (!client) {
+    console.warn(
+      '[GEMINI] No API key detected in environment. Looked for: GEMINI_API_KEY, API_KEY, GOOGLE_API_KEY, VITE_GEMINI_API_KEY.'
+    );
+    return null;
+  }
+
+  let lastError: any = null;
+  for (const model of MODEL_CANDIDATES) {
+    try {
+      const result = await client.models.generateContent({
+        model,
         contents: params.contents,
         config: params.config,
       });
+      if (result?.text) {
+        return result;
+      }
+    } catch (err: any) {
+      lastError = err;
+      console.warn(
+        `[GEMINI] Model "${model}" failed (${err?.message || err}). Trying next fallback candidate...`
+      );
+      // Brief pause before trying next candidate model
+      await new Promise((resolve) => setTimeout(resolve, 250));
     }
-    throw err;
   }
+
+  throw lastError;
 }
 
 // In-Memory 24-Hour Cache for Scans
@@ -702,8 +721,9 @@ app.post('/api/triage-scan', async (req, res) => {
       return res.json({ success: true, data: controlEval });
     }
 
-    // 4. Gemini Call (Server-side ONLY, with 12s timeout)
-    if (aiClient) {
+    // 4. Gemini Call (Server-side ONLY, with 25s timeout and multi-tier failover)
+    const activeAi = getAiClient();
+    if (activeAi) {
       try {
         const ruleHints = ruleResult.rule_hits
           .map((h) => `- ${h.label}: "${h.evidence}" (${h.why})`)
@@ -845,9 +865,9 @@ ${rawText}
           },
         });
 
-        // 12-second timeout guard
+        // 25-second timeout guard to ensure cold starts in serverless never fail prematurely
         const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Gemini API 12s timeout')), 12000)
+          setTimeout(() => reject(new Error('Gemini API 25s timeout')), 25000)
         );
 
         const response: any = await Promise.race([geminiCall, timeoutPromise]);
@@ -905,9 +925,13 @@ ${rawText}
 
           return res.json({ success: true, data: finalEvaluation });
         }
-      } catch (geminiErr) {
-        console.warn('Gemini triage failed or timed out (12s), serving rule fallback:', geminiErr);
+      } catch (geminiErr: any) {
+        console.warn('Gemini triage failed or timed out:', geminiErr?.message || geminiErr);
       }
+    } else {
+      console.warn(
+        '[CONFIG NOTICE] Gemini AI is unavailable because no API key was provided in environment variables (GEMINI_API_KEY / API_KEY / GOOGLE_API_KEY).'
+      );
     }
 
     // 5. Fallback: Rule Engine Result
@@ -939,7 +963,8 @@ app.post('/api/gemini-feedback', async (req, res) => {
       return res.status(400).json({ error: 'Question cannot be empty.' });
     }
 
-    if (aiClient) {
+    const activeAi = getAiClient();
+    if (activeAi) {
       try {
         const historyText = history
           .slice(-6)
@@ -1032,4 +1057,9 @@ async function startServer() {
   });
 }
 
-startServer();
+// Only start standalone listener when not running in Vercel serverless environment
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+export default app;

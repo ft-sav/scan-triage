@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { RedFlag, ScamType } from '../utils/triageEngine';
 import resourcesData from '../data/resources.json';
 
@@ -83,7 +83,13 @@ export const IfPaidWindow: React.FC<IfPaidWindowProps> = ({
   isScamLikely,
   scamType,
 }) => {
-  const [isOpen, setIsOpen] = useState(isScamLikely);
+  // Automatically show expanded by default so emergency recovery protocols are immediately visible
+  const [isOpen, setIsOpen] = useState(true);
+
+  // Auto-expand whenever a new scan result is loaded
+  useEffect(() => {
+    setIsOpen(true);
+  }, [steps, scamType]);
   const scamAdvice = (resourcesData.scam_specific as any)[scamType] || resourcesData.global_emergency;
 
   return (

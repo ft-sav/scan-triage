@@ -23,6 +23,7 @@ import {
   evaluateRules,
   getVerdictLabel,
 } from './utils/triageEngine';
+import { canRunDirectGemini, runDirectGeminiScan } from './utils/geminiDirect';
 import resourcesData from './data/resources.json';
 
 const ROTATING_LOADING_STATUS = [
@@ -153,30 +154,68 @@ export default function App() {
     const textForServer = redaction.redactedText;
 
     try {
-      const response = await fetch('/api/triage-scan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: textForServer,
-          lang: language,
-        }),
-      });
+      let scanResult: TriageEvaluation | null = null;
 
-      const data = await response.json();
+      // 1. First attempt: Call server-side / Vercel serverless function
+      try {
+        let response: Response;
+        try {
+          response = await fetch('/api/triage-scan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              text: textForServer,
+              lang: language,
+            }),
+          });
+        } catch (initialErr) {
+          // Automatic retry for serverless lambda cold start or transient network glitch
+          await new Promise((r) => setTimeout(r, 600));
+          response = await fetch('/api/triage-scan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              text: textForServer,
+              lang: language,
+            }),
+          });
+        }
 
-      if (!response.ok) {
-        throw new Error(data.message || data.error || 'Server scan failure');
+        if (response.ok) {
+          const data = await response.json();
+          if (data?.data && data.data.source === 'gemini') {
+            scanResult = data.data;
+          }
+        }
+      } catch (serverErr) {
+        console.warn('Backend endpoint unavailable or timed out, checking direct Gemini fallback:', serverErr);
       }
 
-      setEvaluation({
-        ...data.data,
-        maskedCount: redaction.maskedCount,
-      });
+      // 2. Second attempt: Direct Gemini fallback in browser if server failed or returned rules fallback
+      if (!scanResult && canRunDirectGemini()) {
+        try {
+          console.log('[DIRECT GEMINI] Running direct Gemini evaluation in browser...');
+          scanResult = await runDirectGeminiScan(textForServer, language);
+        } catch (directErr) {
+          console.warn('[DIRECT GEMINI] Direct evaluation failed:', directErr);
+        }
+      }
 
-      // Scroll to results cleanly
-      setTimeout(() => {
-        resultsRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
+      // 3. If Gemini evaluation succeeded via either path, display it
+      if (scanResult) {
+        setEvaluation({
+          ...scanResult,
+          maskedCount: redaction.maskedCount,
+        });
+
+        setTimeout(() => {
+          resultsRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+        return;
+      }
+
+      // 4. Fallback only if no Gemini API key was provided anywhere and network failed
+      throw new Error('All Gemini evaluation paths exhausted, using local rule engine');
     } catch (err: any) {
       console.warn('Scan network error, running local deterministic fallback:', err);
       // Local client-side fallback if server unreachable
@@ -540,26 +579,7 @@ Example: 'Caller claiming to be DCP Cyber Mumbai called on Skype, said my FedEx 
                 <RedFlagsWindow flags={evaluation.red_flags} />
               </section>
 
-              {/* Window: PLAN.EXE (Next 10 Minutes with Countdown) */}
-              <section aria-label="Next 10 minutes emergency plan">
-                <div className="pixel-box-lg bg-[#FFF8E7] overflow-hidden">
-                  <div className="window-titlebar bg-[#B6FF00] text-[#1A1033]">
-                    <div className="flex items-center gap-2">
-                      <span className="font-pixel text-xs">PLAN.EXE</span>
-                      <span className="font-vt text-sm">[DO THIS IN THE NEXT 10 MINUTES]</span>
-                    </div>
-                    <div className="flex gap-1">
-                      <span className="window-btn">_</span>
-                      <span className="window-btn">口</span>
-                      <span className="window-btn">X</span>
-                    </div>
-                  </div>
 
-                  <div className="p-4 sm:p-5">
-                    <CountdownTimer steps={evaluation.next_10_minutes} />
-                  </div>
-                </div>
-              </section>
 
               {/* Window: IF_ALREADY_PAID.EXE */}
               <section aria-label="If already paid emergency recovery protocol">
