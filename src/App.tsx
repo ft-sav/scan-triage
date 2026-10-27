@@ -145,6 +145,17 @@ export default function App() {
 
     setErrorMessage(null);
     setIsLoading(true);
+    setLoadingStatusIdx(0);
+
+    const requestWithTimeout = async (url: string, options: RequestInit, timeoutMs: number) => {
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        return await fetch(url, { ...options, signal: controller.signal });
+      } finally {
+        window.clearTimeout(timeoutId);
+      }
+    };
 
     // Step A: Client-side PII redaction
     const redaction = redactSensitiveData(trimmed);
@@ -160,25 +171,25 @@ export default function App() {
       try {
         let response: Response;
         try {
-          response = await fetch('/api/triage-scan', {
+          response = await requestWithTimeout('/api/triage-scan', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               text: textForServer,
               lang: language,
             }),
-          });
+          }, 15000);
         } catch (initialErr) {
-          // Automatic retry for serverless lambda cold start or transient network glitch
+          // Automatic retry for a cold start or transient network glitch, but never leave the UI waiting forever.
           await new Promise((r) => setTimeout(r, 600));
-          response = await fetch('/api/triage-scan', {
+          response = await requestWithTimeout('/api/triage-scan', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               text: textForServer,
               lang: language,
             }),
-          });
+          }, 15000);
         }
 
         if (response.ok) {
@@ -194,8 +205,11 @@ export default function App() {
       // 2. Second attempt: Direct Gemini fallback in browser if server failed or returned rules fallback
       if (!scanResult && canRunDirectGemini()) {
         try {
-          console.log('[DIRECT GEMINI] Running direct Gemini evaluation in browser...');
-          scanResult = await runDirectGeminiScan(textForServer, language);
+            console.log('[DIRECT GEMINI] Running direct Gemini evaluation in browser...');
+            scanResult = await Promise.race([
+              runDirectGeminiScan(textForServer, language),
+              new Promise<null>((resolve) => window.setTimeout(() => resolve(null), 20000)),
+            ]);
         } catch (directErr) {
           console.warn('[DIRECT GEMINI] Direct evaluation failed:', directErr);
         }
@@ -228,7 +242,7 @@ export default function App() {
         verdict_label: getVerdictLabel(ruleRes.deterministic_score),
         summary:
           language === 'hi'
-            ? 'नेटवर्क समस्या के कारण बुनियादी नियम जांच परिणाम दिखाए जा रहे हैं।'
+            ? 'नेटवर्क समस्या के कारण बुनियादी नियम जांच परिणाम दिखाए ज��� रहे हैं।'
             : 'AI analysis unavailable - showing deterministic rule checks.',
         red_flags: ruleRes.rule_hits.map((h) => ({
           label: h.label,
