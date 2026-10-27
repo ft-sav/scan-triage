@@ -20,8 +20,6 @@ import { GeminiVerdictChatbot } from './components/GeminiVerdictChatbot';
 import {
   redactSensitiveData,
   TriageEvaluation,
-  evaluateRules,
-  getVerdictLabel,
 } from './utils/triageEngine';
 import { canRunDirectGemini, runDirectGeminiScan } from './utils/geminiDirect';
 import resourcesData from './data/resources.json';
@@ -178,7 +176,7 @@ export default function App() {
               text: textForServer,
               lang: language,
             }),
-          }, 15000);
+          }, 90000);
         } catch (initialErr) {
           // Automatic retry for a cold start or transient network glitch, but never leave the UI waiting forever.
           await new Promise((r) => setTimeout(r, 600));
@@ -189,7 +187,7 @@ export default function App() {
               text: textForServer,
               lang: language,
             }),
-          }, 15000);
+          }, 90000);
         }
 
         if (response.ok) {
@@ -206,10 +204,7 @@ export default function App() {
       if (!scanResult && canRunDirectGemini()) {
         try {
             console.log('[DIRECT GEMINI] Running direct Gemini evaluation in browser...');
-            scanResult = await Promise.race([
-              runDirectGeminiScan(textForServer, language),
-              new Promise<null>((resolve) => window.setTimeout(() => resolve(null), 20000)),
-            ]);
+            scanResult = await runDirectGeminiScan(textForServer, language);
         } catch (directErr) {
           console.warn('[DIRECT GEMINI] Direct evaluation failed:', directErr);
         }
@@ -228,47 +223,14 @@ export default function App() {
         return;
       }
 
-      // 4. Fallback only if no Gemini API key was provided anywhere and network failed
-      throw new Error('All Gemini evaluation paths exhausted, using local rule engine');
+      throw new Error('Gemini did not return an analysis.');
     } catch (err: any) {
-      console.warn('Scan network error, running local deterministic fallback:', err);
-      // Local client-side fallback if server unreachable
-      const ruleRes = evaluateRules(textForServer);
-      const isScamLikely = ruleRes.deterministic_score >= 60;
-      setEvaluation({
-        risk_score: ruleRes.deterministic_score,
-        scam_type: ruleRes.inferred_scam_type as any,
-        confidence: 'medium',
-        verdict_label: getVerdictLabel(ruleRes.deterministic_score),
-        summary:
-          language === 'hi'
-            ? 'नेटवर्क समस्या के कारण बुनियादी नियम जांच परिणाम दिखाए ज��� रहे हैं।'
-            : 'AI analysis unavailable - showing deterministic rule checks.',
-        red_flags: ruleRes.rule_hits.map((h) => ({
-          label: h.label,
-          evidence: h.evidence,
-          why: h.why,
-        })),
-        scammer_goal: isScamLikely ? 'Financial extraction or credential theft.' : 'None identified.',
-        next_10_minutes: isScamLikely
-          ? [
-              'Disconnect immediately. Do not apologize or negotiate.',
-              'Block the sender across WhatsApp, phone, and email.',
-              'Call 1930 Cyber Helpline if money was transferred.',
-            ]
-          : ['No urgent action required. Stay vigilant.'],
-        if_already_paid: [
-          'Call 1930 immediately to freeze transactions in golden hour.',
-          'Contact your bank helpline to block cards and netbanking.',
-        ],
-        do_not: [
-          'Do NOT share OTPs or enter UPI PINs.',
-          'Do NOT stay on video calls under threat.',
-        ],
-        safe_reply: '',
-        source: 'rules-fallback',
-        maskedCount: redaction.maskedCount,
-      });
+      console.warn('AI scan failed:', err);
+      setErrorMessage(
+        language === 'hi'
+          ? 'AI विश्लेषण पूरा नहीं हो सका। कृपया फिर से प्रयास करें।'
+          : 'AI analysis could not be completed. No verdict was generated. Please try again.',
+      );
     } finally {
       setIsLoading(false);
     }
