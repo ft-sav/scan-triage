@@ -23,7 +23,6 @@ import {
   evaluateRules,
   getVerdictLabel,
 } from './utils/triageEngine';
-import { canRunDirectGemini, runDirectGeminiScan } from './utils/geminiDirect';
 import resourcesData from './data/resources.json';
 
 const ROTATING_LOADING_STATUS = [
@@ -90,7 +89,7 @@ export default function App() {
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert('Speech recognition is not supported in this browser. Please type or paste your message.');
+      setErrorMessage('SPEECH RECOGNITION IS NOT SUPPORTED IN THIS BROWSER. PLEASE TYPE OR PASTE YOUR MESSAGE.');
       return;
     }
 
@@ -156,7 +155,7 @@ export default function App() {
     try {
       let scanResult: TriageEvaluation | null = null;
 
-      // 1. First attempt: Call server-side / Vercel serverless function
+      // 1. Call server-side proxy endpoint (/api/triage-scan)
       try {
         let response: Response;
         try {
@@ -169,7 +168,7 @@ export default function App() {
             }),
           });
         } catch (initialErr) {
-          // Automatic retry for serverless lambda cold start or transient network glitch
+          // Automatic retry for server cold start or transient network glitch
           await new Promise((r) => setTimeout(r, 600));
           response = await fetch('/api/triage-scan', {
             method: 'POST',
@@ -183,25 +182,15 @@ export default function App() {
 
         if (response.ok) {
           const data = await response.json();
-          if (data?.data && data.data.source === 'gemini') {
+          if (data?.data) {
             scanResult = data.data;
           }
         }
       } catch (serverErr) {
-        console.warn('Backend endpoint unavailable or timed out, checking direct Gemini fallback:', serverErr);
+        console.warn('Backend endpoint unavailable or timed out:', serverErr);
       }
 
-      // 2. Second attempt: Direct Gemini fallback in browser if server failed or returned rules fallback
-      if (!scanResult && canRunDirectGemini()) {
-        try {
-          console.log('[DIRECT GEMINI] Running direct Gemini evaluation in browser...');
-          scanResult = await runDirectGeminiScan(textForServer, language);
-        } catch (directErr) {
-          console.warn('[DIRECT GEMINI] Direct evaluation failed:', directErr);
-        }
-      }
-
-      // 3. If Gemini evaluation succeeded via either path, display it
+      // 2. If scan succeeded via server, display it
       if (scanResult) {
         setEvaluation({
           ...scanResult,

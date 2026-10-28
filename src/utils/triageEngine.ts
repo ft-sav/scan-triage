@@ -424,6 +424,106 @@ export function evaluateRules(text: string): RuleEngineResult {
     });
   }
 
+  // 12. Lottery / Prize / KBC / Cash Reward Fraud
+  const lotteryMatches = [
+    'lottery',
+    'cash prize',
+    'won rs',
+    'won inr',
+    'lucky draw',
+    'kbc',
+    'kaun banega crorepati',
+    'claim now',
+    'processing fee',
+    'claim prize',
+    'gift card',
+  ].filter((k) => lower.includes(k));
+
+  if (lotteryMatches.length > 0 && (lower.includes('fee') || lower.includes('claim') || lower.includes('won') || lower.includes('prize') || lower.includes('rs'))) {
+    const evidence = findExactSnippet(text, lotteryMatches[0]);
+    hits.push({
+      id: 'LOTTERY_PRIZE_ADVANCE_FEE',
+      category: 'Advance Fee Fraud',
+      label: 'Fake Lottery / Prize Advance Fee',
+      weight: 40,
+      evidence,
+      why: 'Legitimate lotteries and contests never demand upfront "processing fees" or tax payments to release prizes.',
+    });
+  }
+
+  // 13. Electricity / Utility Disconnection Threat
+  const electricityMatches = [
+    'electricity',
+    'power cut',
+    'bill unpaid',
+    'will be disconnected',
+    'disconnected tonight',
+    'electricity officer',
+    'power office',
+    'light will be cut',
+    'previous month bill',
+  ].filter((k) => lower.includes(k));
+
+  if (electricityMatches.length > 0) {
+    const evidence = findExactSnippet(text, electricityMatches[0]);
+    hits.push({
+      id: 'ELECTRICITY_DISCONNECTION_THREAT',
+      category: 'Utility Phishing Extortion',
+      label: 'Urgent Electricity Disconnection Scam',
+      weight: 40,
+      evidence,
+      why: 'State electricity discoms never issue same-night disconnection ultimatums with personal mobile numbers.',
+    });
+  }
+
+  // 14. Investment / Guaranteed Returns / Telegram Stock Tips
+  const investMatches = [
+    'guaranteed return',
+    'daily return',
+    'crypto',
+    'trading vip',
+    'stock tips',
+    'double your money',
+    '100% profit',
+    'part time task',
+    'youtube like',
+    'telegram group',
+  ].filter((k) => lower.includes(k));
+
+  if (investMatches.length > 0) {
+    const evidence = findExactSnippet(text, investMatches[0]);
+    hits.push({
+      id: 'INVESTMENT_TASK_PONZI',
+      category: 'Investment / Ponzi Trap',
+      label: 'Unrealistic Guaranteed Returns / Task Scam',
+      weight: 40,
+      evidence,
+      why: 'Guaranteed high returns and paid Telegram tasks are hallmarks of international pig butchering investment fraud.',
+    });
+  }
+
+  // 15. Customs Parcel / Courier Clearance Scam
+  const parcelMatches = [
+    'customs clearance',
+    'parcel stuck',
+    'airport customs',
+    'gift parcel',
+    'foreign courier',
+    'clearance charges',
+  ].filter((k) => lower.includes(k));
+
+  if (parcelMatches.length > 0) {
+    const evidence = findExactSnippet(text, parcelMatches[0]);
+    hits.push({
+      id: 'PARCEL_CUSTOMS_EXTORTION',
+      category: 'Customs Extortion',
+      label: 'Fake Parcel / Customs Clearance Fee',
+      weight: 40,
+      evidence,
+      why: 'Indian Customs never asks recipients to transfer clearance fees to personal UPI or bank accounts.',
+    });
+  }
+
   // Calculate sum of weights, capped at 100
   const totalWeight = hits.reduce((acc, h) => acc + h.weight, 0);
   const score = Math.min(100, Math.max(0, totalWeight));
@@ -440,6 +540,14 @@ export function evaluateRules(text: string): RuleEngineResult {
     inferredType = 'KYC_OR_BANK_PHISHING';
   } else if (remoteMatches.length > 0) {
     inferredType = 'TECH_SUPPORT_REMOTE_ACCESS';
+  } else if (electricityMatches.length > 0) {
+    inferredType = 'KYC_OR_BANK_PHISHING';
+  } else if (lotteryMatches.length > 0) {
+    inferredType = 'LOTTERY_OR_PRIZE';
+  } else if (investMatches.length > 0) {
+    inferredType = 'INVESTMENT_OR_TRADING';
+  } else if (parcelMatches.length > 0) {
+    inferredType = 'PARCEL_OR_CUSTOMS';
   } else if (score < 25) {
     inferredType = 'NONE';
   }

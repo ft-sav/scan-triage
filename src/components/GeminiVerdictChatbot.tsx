@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { TriageEvaluation } from '../utils/triageEngine';
-import { runDirectGeminiFeedback, canRunDirectGemini } from '../utils/geminiDirect';
 
 interface Message {
   id: string;
@@ -176,18 +175,7 @@ export const GeminiVerdictChatbot: React.FC<GeminiVerdictChatbotProps> = ({
       });
 
       const data = await response.json();
-
-      let reply = response.ok && data.reply ? data.reply : null;
-      if (!reply && canRunDirectGemini()) {
-        reply = await runDirectGeminiFeedback(
-          query,
-          originalText,
-          messages.map((m) => ({
-            role: m.sender === 'citizen' ? 'user' : 'model',
-            content: m.text,
-          }))
-        );
-      }
+      const reply = response.ok && data.reply ? data.reply : null;
 
       if (reply) {
         setMessages((prev) => [

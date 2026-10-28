@@ -2,13 +2,15 @@ import { GoogleGenAI } from '@google/genai';
 import type { Request, Response } from 'express';
 
 const MODEL_CANDIDATES = [
+  'gemini-3.5-flash',
+  'gemini-3.6-flash',
+  'gemini-3-flash-preview',
   'gemini-3.8-flash',
-  'gemini-3.1-flash-lite',
-  'gemini-flash-latest',
 ];
 
 function getApiKey(): string {
   return (
+    process.env.CUSTOM_GEMINI_API_KEY ||
     process.env.GEMINI_API_KEY ||
     process.env.API_KEY ||
     process.env.GOOGLE_API_KEY ||
